@@ -74,9 +74,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const clerkClient = createClerkClient({
-  secretKey:
-    process.env.CLERK_SECRET_KEY ||
-    "sk_test_9UR9EDsgB3Y4TVT1sqONIkJGou9Rf9ywNjrTNcdECQ",
+  secretKey: process.env.CLERK_SECRET_KEY,
 });
 
 app.use(cors());
@@ -379,23 +377,21 @@ app.get("/", (req, res) => {
     endpoints: ["/ocr", "/health", "/signup", "/signin"],
   });
 });
-
-// Your existing endpoints...
+//signup
 app.post("/signup", async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Missing email or password" });
+
   try {
-    const newUser = await clerkClient.users.createUser({
+    const user = await clerk.users.createUser({
       emailAddress: [email],
       password,
-      firstName: firstName,
-      lastName: lastName,
+      firstName,
+      lastName,
     });
-    res.json(newUser);
+
+    res.json({ success: true, user });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.errors || err.message });
+    res.status(400).json({ success: false, error: err.errors || err.message });
   }
 });
 
