@@ -382,7 +382,7 @@ app.post("/signup", async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
 
   try {
-    const user = await clerk.users.createUser({
+    const user = await clerkClient.users.createUser({
       emailAddress: [email],
       password,
       firstName,
