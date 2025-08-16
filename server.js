@@ -382,15 +382,15 @@ app.get("/", (req, res) => {
 
 // Your existing endpoints...
 app.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, firstName, lastName } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "Missing email or password" });
   try {
     const newUser = await clerkClient.users.createUser({
       emailAddress: [email],
       password,
-      firstName: "John",
-      lastName: "Doe",
+      firstName: firstName,
+      lastName: lastName,
     });
     res.json(newUser);
   } catch (err) {
