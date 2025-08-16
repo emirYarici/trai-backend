@@ -397,16 +397,34 @@ app.post("/signup", async (req, res) => {
 
 app.post("/signin", async (req, res) => {
   const { email, password } = req.body;
+
   if (!email || !password)
     return res.status(400).json({ error: "Missing email or password" });
+
   try {
-    const signInToken = await clerkClient.signInTokens.create({
-      identity: { emailAddress: [email] },
+    // Create a sign-in attempt
+    const signInAttempt = await clerkClient.signIns.create({
+      identifier: email,
+      password,
     });
-    res.json(signInToken);
+
+    if (signInAttempt.status === "complete") {
+      // ✅ User successfully signed in
+      res.json({
+        sessionId: signInAttempt.createdSessionId,
+        userId: signInAttempt.userId,
+      });
+    } else {
+      // ❌ Requires further steps (2FA, etc.)
+      res.status(401).json({
+        error: "Sign-in not complete",
+        status: signInAttempt.status,
+        details: signInAttempt,
+      });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.errors || err.message });
+    res.status(400).json({ error: err.errors || err.message });
   }
 });
 
