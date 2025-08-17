@@ -77,6 +77,7 @@ const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
 });
 
+console.log("Clerk client methods:", Object.keys(clerkClient));
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -398,35 +399,33 @@ app.post("/signup", async (req, res) => {
 app.post("/signin", async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password)
-    return res.status(400).json({ error: "Missing email or password" });
-
   try {
-    // Create a sign-in attempt
-    const signInAttempt = await clerkClient.signIns.create({
-      identifier: email,
-      password,
+    // Step 1: Retrieve user by email
+    const users = await clerkClient.users.getUserList({
+      emailAddress: [email],
     });
 
-    if (signInAttempt.status === "complete") {
-      // ✅ User successfully signed in
-      res.json({
-        sessionId: signInAttempt.createdSessionId,
-        userId: signInAttempt.userId,
-      });
-    } else {
-      // ❌ Requires further steps (2FA, etc.)
-      res.status(401).json({
-        error: "Sign-in not complete",
-        status: signInAttempt.status,
-        details: signInAttempt,
-      });
+    if (users.totalCount === 0) {
+      return res.status(404).json({ error: "User not found" });
     }
+
+    const user = users.data[0];
+
+    // Step 2: Create a sign-in token for the user
+    const signInToken = await clerkClient.signInTokens.createSignInToken({
+      userId: user.id,
+      expiresInSeconds: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    // Step 3: Return the sign-in token to the client
+    res.json({ signInToken: signInToken.token });
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: err.errors || err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
+
+app.listen(3000, () => console.log("Server running on 3000"));
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
