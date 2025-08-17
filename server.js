@@ -75,6 +75,7 @@ const PORT = process.env.PORT || 3000;
 
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
+  publishableKey: process.env.CLERK_PUBLIC_KEY,
 });
 
 console.log("Clerk client methods:", Object.keys(clerkClient));
@@ -425,6 +426,21 @@ app.post("/signin", async (req, res) => {
   }
 });
 
+app.get("/protected", async (req, res) => {
+  try {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    const { isAuthenticated } = await clerkClient.authenticateRequest(
+      { ...req, url: fullUrl },
+      {
+        // jwtKey: process.env.CLERK_JWT_KEY,
+      }
+    );
+    console.log("isA", isAuthenticated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 app.listen(3000, () => console.log("Server running on 3000"));
 
 app.listen(PORT, () => {
